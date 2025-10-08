@@ -276,3 +276,7 @@ server = A2AStarletteApplication(
 # This is the ASGI app entry that Vercel invokes
 app = server.build()
 
+if __name__ == "__main__":
+    port = int(os.getenv("RESTAURANT_PORT", 9003))
+    print(f"🗺️ Starting Restaurant Agent on http://localhost:{port}")
+    uvicorn.run(app, host="0.0.0.0", port=port)

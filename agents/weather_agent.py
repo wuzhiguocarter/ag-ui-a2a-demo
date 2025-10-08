@@ -284,3 +284,8 @@ server = A2AStarletteApplication(
 # This is the ASGI app entry that Vercel invokes
 app = server.build()
 
+
+if __name__ == "__main__":
+    port = int(os.getenv("WEATHER_PORT", 9005))
+    print(f"🗺️ Starting Weather Agent on http://localhost:{port}")
+    uvicorn.run(app, host="0.0.0.0", port=port)

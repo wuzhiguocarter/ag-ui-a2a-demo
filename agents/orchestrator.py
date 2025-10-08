@@ -110,3 +110,8 @@ adk_orchestrator_agent = ADKAgent(
 
 app = FastAPI(title="Travel Planning Orchestrator (ADK)")
 add_adk_fastapi_endpoint(app, adk_orchestrator_agent, path="/")
+
+if __name__ == "__main__":
+    port = int(os.getenv("ORCHESTRATOR_PORT", 9000))
+    print(f"🗺️ Starting Orchestrator Agent on http://localhost:{port}")
+    uvicorn.run(app, host="0.0.0.0", port=port)
