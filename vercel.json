@@ -1,0 +1,5 @@
+{
+  "functions": {
+    "agents/**/*.py": { "runtime": "python3.11" }
+  }
+}

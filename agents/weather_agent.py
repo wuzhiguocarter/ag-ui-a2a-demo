@@ -233,30 +233,54 @@ class WeatherAgentExecutor(AgentExecutor):
         raise Exception('cancel not supported')
 
 
-def main():
-    if not os.getenv("GOOGLE_API_KEY") and not os.getenv("GEMINI_API_KEY"):
-        print("⚠️  Warning: No API key found!")
-        print("   Set either GOOGLE_API_KEY or GEMINI_API_KEY environment variable")
-        print("   Example: export GOOGLE_API_KEY='your-key-here'")
-        print("   Get a key from: https://aistudio.google.com/app/apikey")
-        print()
+# Build the A2A Starlette app.
+# Set the public URL via env so cards don’t point at localhost.
+base_url = os.getenv("WEATHER_PUBLIC_URL")  # e.g. https://your-app.vercel.app/api/itinerary
 
-    request_handler = DefaultRequestHandler(
-        agent_executor=WeatherAgentExecutor(),
-        task_store=InMemoryTaskStore(),
-    )
+skill = AgentSkill(
+    id='weather_agent',
+    name='Weather Forecast Agent',
+    description='Provides weather forecasts and travel weather advice using ADK',
+    tags=['travel', 'weather', 'forecast', 'climate', 'adk'],
+    examples=[
+        'What will the weather be like in Tokyo next week?',
+        'Should I pack an umbrella for my Paris trip?',
+        'Give me the weather forecast for my 5-day New York visit'
+    ],
+)
 
-    server = A2AStarletteApplication(
-        agent_card=public_agent_card,
-        http_handler=request_handler,
-        extended_agent_card=public_agent_card,
-    )
+public_agent_card = AgentCard(
+    name='Weather Agent',
+    description='ADK-powered agent that provides weather forecasts and packing advice for travelers',
+    url=base_url or "",  # recommended to set in prod
+    version="1.0.0",
+    defaultInputModes=["text"],
+    defaultOutputModes=["text"],
+    capabilities=AgentCapabilities(streaming=True),
+    skills=[skill],
+    supportsAuthenticatedExtendedCard=False,
+)
 
-    print(f"🌤️  Starting Weather Agent (ADK + A2A) on http://localhost:{port}")
-    print(f"   Agent: {public_agent_card.name}")
-    print(f"   Description: {public_agent_card.description}")
-    uvicorn.run(server.build(), host='0.0.0.0', port=port)
+class WeatherAgentExecutor(AgentExecutor):
+    def __init__(self):
+        self.agent = WeatherAgent()
+    async def execute(self, context: RequestContext, event_queue: EventQueue) -> None:
+        result = await self.agent.invoke(context.message)
+        await event_queue.enqueue_event(new_agent_text_message(result))
+    async def cancel(self, context: RequestContext, event_queue: EventQueue) -> None:
+        raise Exception("cancel not supported")
 
+request_handler = DefaultRequestHandler(
+    agent_executor=WeatherAgentExecutor(),
+    task_store=InMemoryTaskStore(),
+)
 
-if __name__ == '__main__':
-    main()
+server = A2AStarletteApplication(
+    agent_card=public_agent_card,
+    http_handler=request_handler,
+    extended_agent_card=public_agent_card,
+)
+
+# This is the ASGI app entry that Vercel invokes
+app = server.build()
+
