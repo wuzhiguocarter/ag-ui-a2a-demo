@@ -105,19 +105,13 @@ adk_orchestrator_agent = ADKAgent(
     app_name="orchestrator_app",
     user_id="demo_user",
     session_timeout_seconds=3600,
-    use_in_memory_services=True
+    use_in_memory_services=True  # ephemeral on Vercel
 )
 
 app = FastAPI(title="Travel Planning Orchestrator (ADK)")
 add_adk_fastapi_endpoint(app, adk_orchestrator_agent, path="/")
 
 if __name__ == "__main__":
-    if not os.getenv("GOOGLE_API_KEY"):
-        print("⚠️  Warning: GOOGLE_API_KEY environment variable not set!")
-        print("   Set it with: export GOOGLE_API_KEY='your-key-here'")
-        print("   Get a key from: https://aistudio.google.com/app/apikey")
-        print()
-
     port = int(os.getenv("ORCHESTRATOR_PORT", 9000))
-    print(f"🚀 Starting Orchestrator Agent (ADK + AG-UI) on http://localhost:{port}")
+    print(f"🗺️ Starting Orchestrator Agent on http://localhost:{port}")
     uvicorn.run(app, host="0.0.0.0", port=port)

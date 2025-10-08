@@ -98,3 +98,4 @@ docs/
 .cursorrules
 context/
 starter/
+.env.prod

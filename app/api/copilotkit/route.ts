@@ -20,14 +20,18 @@ import { A2AMiddlewareAgent } from "@ag-ui/a2a-middleware";
 import { NextRequest } from "next/server";
 
 export async function POST(request: NextRequest) {
+  const base =
+    process.env.SELF_BASE_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
   // STEP 1: Define A2A agent URLs
-  const itineraryAgentUrl = process.env.ITINERARY_AGENT_URL || "http://localhost:9001";
-  const budgetAgentUrl = process.env.BUDGET_AGENT_URL || "http://localhost:9002";
-  const restaurantAgentUrl = process.env.RESTAURANT_AGENT_URL || "http://localhost:9003";
-  const weatherAgentUrl = process.env.WEATHER_AGENT_URL || "http://localhost:9005";
+  const itineraryAgentUrl = process.env.ITINERARY_AGENT_URL || `${base}/api/itinerary`;
+  const restaurantAgentUrl = process.env.RESTAURANT_AGENT_URL || `${base}/api/restaurant`;
+  const budgetAgentUrl = process.env.BUDGET_AGENT_URL || `${base}/api/budget`;
+  const weatherAgentUrl = process.env.WEATHER_AGENT_URL || `${base}/api/weather`;
 
   // STEP 2: Define orchestrator URL (speaks AG-UI Protocol)
-  const orchestratorUrl = process.env.ORCHESTRATOR_URL || "http://localhost:9000";
+  const orchestratorUrl = process.env.ORCHESTRATOR_URL || `${base}/api/orchestrator`;
 
   // STEP 3: Wrap orchestrator with HttpAgent (AG-UI client)
   const orchestrationAgent = new HttpAgent({

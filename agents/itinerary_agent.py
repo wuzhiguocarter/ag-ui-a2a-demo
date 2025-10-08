@@ -230,27 +230,62 @@ class ItineraryAgentExecutor(AgentExecutor):
     ) -> None:
         raise Exception('cancel not supported')
 
+# Build the A2A Starlette app.
+# Set the public URL via env so cards don’t point at localhost.
+base_url = os.getenv("ITINERARY_PUBLIC_URL")  # e.g. https://your-app.vercel.app/api/itinerary
 
-def main():
-    if not os.getenv("OPENAI_API_KEY"):
-        print("⚠️  Warning: OPENAI_API_KEY environment variable not set!")
-        print("   Set it with: export OPENAI_API_KEY='your-key-here'")
-        print()
+skill = AgentSkill(
+    id="itinerary_agent",
+    name="Itinerary Planning Agent",
+    description="Creates detailed day-by-day travel itineraries using LangGraph",
+    tags=["travel", "itinerary", "langgraph"],
+    examples=["Create a 3-day itinerary for Tokyo", "Plan a week-long trip to Paris"]
+)
 
-    request_handler = DefaultRequestHandler(
-        agent_executor=ItineraryAgentExecutor(),
-        task_store=InMemoryTaskStore(),
-    )
+public_agent_card = AgentCard(
+    name="Itinerary Agent",
+    description="LangGraph-powered itinerary generator",
+    url=base_url or "",  # recommended to set in prod
+    version="1.0.0",
+    defaultInputModes=["text"],
+    defaultOutputModes=["text"],
+    capabilities=AgentCapabilities(streaming=True),
+    skills=[skill],
+    supportsAuthenticatedExtendedCard=False,
+)
 
-    server = A2AStarletteApplication(
-        agent_card=public_agent_card,
-        http_handler=request_handler,
-        extended_agent_card=public_agent_card,
-    )
+class ItineraryAgentExecutor(AgentExecutor):
+    def __init__(self):
+        self.agent = ItineraryAgent()
 
-    print(f"🗺️  Starting Itinerary Agent (LangGraph + A2A) on http://localhost:{port}")
-    uvicorn.run(server.build(), host='0.0.0.0', port=port)
+    async def execute(
+        self,
+        context: RequestContext,
+        event_queue: EventQueue,
+    ) -> None:
+        result = await self.agent.invoke(context.message)
+        await event_queue.enqueue_event(new_agent_text_message(result))
 
+    async def cancel(
+        self, context: RequestContext, event_queue: EventQueue
+    ) -> None:
+        raise Exception('cancel not supported')
 
-if __name__ == '__main__':
-    main()
+request_handler = DefaultRequestHandler(
+    agent_executor=ItineraryAgentExecutor(),
+    task_store=InMemoryTaskStore(),
+)
+
+server = A2AStarletteApplication(
+    agent_card=public_agent_card,
+    http_handler=request_handler,
+    extended_agent_card=public_agent_card,
+)
+
+# This is the ASGI app entry that Vercel invokes
+app = server.build()
+
+if __name__ == "__main__":
+    port = int(os.getenv("ITINERARY_PORT", 9001))
+    print(f"🗺️ Starting Itinerary Agent on http://localhost:{port}")
+    uvicorn.run(app, host="0.0.0.0", port=port)

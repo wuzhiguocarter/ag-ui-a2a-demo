@@ -231,30 +231,69 @@ class BudgetAgentExecutor(AgentExecutor):
         raise Exception('cancel not supported')
 
 
-def main():
-    if not os.getenv("GOOGLE_API_KEY") and not os.getenv("GEMINI_API_KEY"):
-        print("⚠️  Warning: No API key found!")
-        print("   Set either GOOGLE_API_KEY or GEMINI_API_KEY environment variable")
-        print("   Example: export GOOGLE_API_KEY='your-key-here'")
-        print("   Get a key from: https://aistudio.google.com/app/apikey")
-        print()
+# Build the A2A Starlette app.
+# Set the public URL via env so cards don’t point at localhost.
+base_url = os.getenv("BUDGET_PUBLIC_URL")  # e.g. https://your-app.vercel.app/api/itinerary
 
-    request_handler = DefaultRequestHandler(
-        agent_executor=BudgetAgentExecutor(),
-        task_store=InMemoryTaskStore(),
-    )
+skill = AgentSkill(
+    id='budget_agent',
+    name='Budget Planning Agent',
+    description='Estimates travel costs and creates detailed budget breakdowns using ADK',
+    tags=['travel', 'budget', 'finance', 'adk'],
+    examples=[
+        'Estimate the budget for a 3-day trip to Tokyo',
+        'How much would a week in Paris cost?',
+        'Create a budget for my New York trip'
+    ],
+)
 
-    server = A2AStarletteApplication(
-        agent_card=public_agent_card,
-        http_handler=request_handler,
-        extended_agent_card=public_agent_card,
-    )
+public_agent_card = AgentCard(
+    name='Budget Agent',
+    description='ADK-powered agent that estimates travel budgets and creates cost breakdowns',
+    url=base_url or "",  # recommended to set in prod
+    version="1.0.0",
+    defaultInputModes=["text"],
+    defaultOutputModes=["text"],
+    capabilities=AgentCapabilities(streaming=True),
+    skills=[skill],
+    supportsAuthenticatedExtendedCard=False,
+)
 
-    print(f"💰 Starting Budget Agent (ADK + A2A) on http://localhost:{port}")
-    print(f"   Agent: {public_agent_card.name}")
-    print(f"   Description: {public_agent_card.description}")
-    uvicorn.run(server.build(), host='0.0.0.0', port=port)
+class BudgetAgentExecutor(AgentExecutor):
+    def __init__(self):
+        self.agent = BudgetAgent()
+
+    async def execute(
+        self,
+        context: RequestContext,
+        event_queue: EventQueue,
+    ) -> None:
+        query = context.get_user_input()
+        session_id = getattr(context, 'context_id', 'default_session')
+        final_content = await self.agent.invoke(query, session_id)
+        await event_queue.enqueue_event(new_agent_text_message(final_content))
+
+    async def cancel(
+        self, context: RequestContext, event_queue: EventQueue
+    ) -> None:
+        raise Exception('cancel not supported')
+
+request_handler = DefaultRequestHandler(
+    agent_executor=BudgetAgentExecutor(),
+    task_store=InMemoryTaskStore(),
+)
+
+server = A2AStarletteApplication(
+    agent_card=public_agent_card,
+    http_handler=request_handler,
+    extended_agent_card=public_agent_card,
+)
+
+# This is the ASGI app entry that Vercel invokes
+app = server.build()
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    port = int(os.getenv("BUDGET_PORT", 9002))
+    print(f"🗺️ Starting Budget Agent on http://localhost:{port}")
+    uvicorn.run(app, host="0.0.0.0", port=port)
