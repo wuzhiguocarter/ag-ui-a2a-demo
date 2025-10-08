@@ -256,11 +256,21 @@ public_agent_card = AgentCard(
 class RestaurantAgentExecutor(AgentExecutor):
     def __init__(self):
         self.agent = RestaurantAgent()
-    async def execute(self, context: RequestContext, event_queue: EventQueue) -> None:
-        result = await self.agent.invoke(context.message)
-        await event_queue.enqueue_event(new_agent_text_message(result))
-    async def cancel(self, context: RequestContext, event_queue: EventQueue) -> None:
-        raise Exception("cancel not supported")
+
+    async def execute(
+        self,
+        context: RequestContext,
+        event_queue: EventQueue,
+    ) -> None:
+        query = context.get_user_input()
+        session_id = getattr(context, 'context_id', 'default_session')
+        final_content = await self.agent.invoke(query, session_id)
+        await event_queue.enqueue_event(new_agent_text_message(final_content))
+
+    async def cancel(
+        self, context: RequestContext, event_queue: EventQueue
+    ) -> None:
+        raise Exception('cancel not supported')
 
 request_handler = DefaultRequestHandler(
     agent_executor=RestaurantAgentExecutor(),
