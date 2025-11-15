@@ -91,7 +91,6 @@ Desktop.ini
 *_key*
 *_token*
 !.env.example
-*.md
 !README.md
 examples/
 docs/

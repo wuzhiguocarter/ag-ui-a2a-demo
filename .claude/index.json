@@ -1,0 +1,121 @@
+{
+  "timestamp": "2025-11-15T00:42:19Z",
+  "projectName": "ag-ui-a2a-demo",
+  "scanningSession": {
+    "startTime": "2025-11-15T00:42:19Z",
+    "totalFilesFound": 50,
+    "filesScanned": 25,
+    "coveragePercentage": 50,
+    "truncated": false
+  },
+  "modules": [
+    {
+      "path": "/agents",
+      "name": "Python Agents",
+      "type": "python-agents",
+      "language": "Python",
+      "description": "Multi-agent backend with LangGraph and ADK frameworks",
+      "entryPoints": [
+        "agents/orchestrator.py",
+        "agents/itinerary_agent.py",
+        "agents/budget_agent.py",
+        "agents/restaurant_agent.py",
+        "agents/weather_agent.py"
+      ],
+      "interfaces": [
+        "api/orchestrator.py",
+        "api/itinerary_agent.py",
+        "api/budget_agent.py",
+        "api/restaurant_agent.py",
+        "api/weather_agent.py"
+      ],
+      "tests": [],
+      "configFiles": [
+        "agents/requirements.txt"
+      ],
+      "coverage": {
+        "scannedFiles": 15,
+        "totalFiles": 18,
+        "percentage": 83
+      }
+    },
+    {
+      "path": "/app",
+      "name": "Next.js Frontend",
+      "type": "frontend",
+      "language": "TypeScript/React",
+      "description": "Next.js application with CopilotKit integration",
+      "entryPoints": [
+        "app/page.tsx",
+        "app/layout.tsx"
+      ],
+      "interfaces": [
+        "app/api/copilotkit/route.ts"
+      ],
+      "tests": [],
+      "configFiles": [
+        "tsconfig.json",
+        "next.config.ts",
+        "tailwind.config.ts"
+      ],
+      "coverage": {
+        "scannedFiles": 8,
+        "totalFiles": 12,
+        "percentage": 67
+      }
+    },
+    {
+      "path": "/components",
+      "name": "UI Components",
+      "type": "ui-components",
+      "language": "TypeScript/React",
+      "description": "React components for travel planning UI",
+      "entryPoints": [
+        "components/travel-chat.tsx",
+        "components/types/index.ts"
+      ],
+      "interfaces": [],
+      "tests": [],
+      "configFiles": [
+        "components/style.css",
+        "components/a2a/agent-styles.ts"
+      ],
+      "coverage": {
+        "scannedFiles": 10,
+        "totalFiles": 20,
+        "percentage": 50
+      }
+    }
+  ],
+  "ignoredFiles": {
+    "patterns": [
+      "node_modules/**",
+      ".git/**",
+      "dist/**",
+      "build/**",
+      "__pycache__/**",
+      "*.pyc",
+      "*.log",
+      ".env*"
+    ],
+    "count": 0
+  },
+  "gaps": [
+    {
+      "module": "/agents",
+      "missing": ["测试文件", "API路由详细实现"],
+      "recommendation": "扫描agents/budget_agent.py, agents/restaurant_agent.py, agents/weather_agent.py的完整实现"
+    },
+    {
+      "module": "/components",
+      "missing": ["表单组件", "HITL组件", "A2A消息组件"],
+      "recommendation": "扫描components/forms/, components/hitl/, components/a2a/目录下的所有文件"
+    }
+  ],
+  "nextSteps": [
+    "深度扫描agents/目录下所有Python智能体的完整实现",
+    "详细读取components/目录下的表单和A2A通信组件",
+    "分析API路由层的完整实现",
+    "检查是否有测试配置文件和测试用例"
+  ]
+}
